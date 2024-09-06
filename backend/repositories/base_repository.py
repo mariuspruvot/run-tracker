@@ -7,11 +7,11 @@ M = TypeVar("M")
 # Type definition for Unique Id
 K = TypeVar("K")
 
+
 class AbstractRepository(Generic[M, K], ABC):
     """
     Absract representation of a repository
     """
-
 
     # Create a new instance of the Model
     @abstractmethod
