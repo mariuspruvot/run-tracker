@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Session
-from base_repository import AbstractRepository
+
 from backend.models.user import User
+from backend.repositories.base_repository import AbstractRepository
 from backend.schemas.user import UserCreate, UserResponse
-from typing import List, Optional
+from typing import List
+import bcrypt
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +21,9 @@ class UserRepository(AbstractRepository[UserCreate, int]):
         user = User(
             username=instance.username,
             email=instance.email,
-            hashed_password=instance.password,
+            hashed_password=str(
+                bcrypt.hashpw(instance.password.encode(), bcrypt.gensalt())
+            ),
         )
         self.db.add(user)
         self.db.commit()
@@ -43,7 +47,7 @@ class UserRepository(AbstractRepository[UserCreate, int]):
 
     def get(self, id: int) -> UserResponse | None:
         """
-        Fetch an existing user instance from the database by it's unique id.
+        Fetch an existing user instance from the database by its unique id.
         """
         user = self.db.query(User).filter(User.id == id).first()
         if not user:
@@ -74,7 +78,9 @@ class UserRepository(AbstractRepository[UserCreate, int]):
 
         user.username = instance.username
         user.email = instance.email
-        user.hashed_password = instance.password
+        user.hashed_password = str(
+            bcrypt.hashpw(instance.password.encode(), bcrypt.gensalt())
+        )
         self.db.commit()
         self.db.refresh(user)
         logger.info(f"User with id {id} updated")
