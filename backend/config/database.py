@@ -15,6 +15,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # All models will inherit from this class.
 Base = declarative_base()
 
+
 def get_db():
     """
     This function is a generator that provide database sessions
@@ -22,5 +23,8 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception as e:
+        db.rollback()
+        raise e
     finally:
         db.close()

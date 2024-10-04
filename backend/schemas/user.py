@@ -1,6 +1,15 @@
 from pydantic import BaseModel, EmailStr
 
-class UserBase(BaseModel):
+
+class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+
+
+class UserResponse(BaseModel):
+    username: str
+    email: EmailStr
+
+    class Config:
+        from_attributes = True
