@@ -1,45 +1,44 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.sync import update
 
 from backend.exceptions.users import UserNotFoundException
+from backend.factory.users import UserFactory
 from backend.models.user import User
 from backend.repositories.base_repository import AbstractRepository
-from backend.schemas.user import UserCreate, UserResponse
+from backend.schemas.user import UserInDB, UserOutDB
 from typing import List
-import bcrypt
 import logging
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
-class UserRepository(AbstractRepository[UserCreate, int]):
+class UserRepository(AbstractRepository[UserInDB, int]):
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, instance: UserCreate) -> UserResponse:
+    def create(self, instance: UserInDB) -> UserOutDB:
         """
         Create a new user instance in the database and return the response object.
         """
-        user = User(
-            username=instance.username,
-            email=instance.email,
-            hashed_password=str(
-                bcrypt.hashpw(instance.password.encode(), bcrypt.gensalt())
-            ),
-        )
+        user = UserFactory.create_user_in_db(instance)
+
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+
         logger.info(f"User with id {user.id} created")
-        return UserResponse.model_validate(user)
+
+        return UserOutDB.model_validate(user)
 
     def delete(self, id: uuid) -> None:
         """
         Delete an existing user instance from the database.
         """
-        user = self.get(id)
+        user = self.db.query(User).filter(User.id == id).first()
 
         if not user:
             logger.error(f"User with id {id} not found")
@@ -49,7 +48,7 @@ class UserRepository(AbstractRepository[UserCreate, int]):
         self.db.commit()
         logger.info(f"User with id {id} deleted")
 
-    def get(self, id: UUID) -> UserResponse | None:
+    def get(self, id: UUID) -> UserOutDB | None:
         """
         Fetch an existing user instance from the database by its unique id.
         """
@@ -57,9 +56,9 @@ class UserRepository(AbstractRepository[UserCreate, int]):
         if not user:
             logger.error(f"User with id {id} not found")
             raise UserNotFoundException(f"User with id {id} not found")
-        return UserResponse.model_validate(user)
+        return UserOutDB.model_validate(user)
 
-    def list(self, limit: int = 10, start: int = 0) -> List[UserResponse]:
+    def list(self, limit: int = 10, start: int = 0) -> List[UserOutDB]:
         """
         List all existing user instances from the database.
         """
@@ -68,13 +67,13 @@ class UserRepository(AbstractRepository[UserCreate, int]):
         if not users:
             logger.error("No users found")
             raise UserNotFoundException("No users found")
-        return [UserResponse.model_validate(user) for user in users]
+        return [UserOutDB.model_validate(user) for user in users]
 
-    def update(self, id: uuid, instance: UserCreate) -> UserResponse | None:
+    def update(self, id: uuid.UUID, instance: UserInDB) -> UserOutDB | None:
         """
         Update an existing user instance in the database.
         """
-        user = self.get(id)
+        user = self.db.query(User).filter(User.id == id).first()
 
         if not user:
             logger.error(f"User with id {id} not found")
@@ -85,7 +84,8 @@ class UserRepository(AbstractRepository[UserCreate, int]):
         user.hashed_password = str(
             bcrypt.hashpw(instance.password.encode(), bcrypt.gensalt())
         )
+
         self.db.commit()
         self.db.refresh(user)
         logger.info(f"User with id {id} updated")
-        return UserResponse.model_validate(user)
+        return UserOutDB.model_validate(user)

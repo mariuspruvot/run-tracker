@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic_core.core_schema import json_schema
 
 from backend.exceptions.users import UserNotFoundException
 from backend.repositories.user_repository import UserRepository
-from backend.schemas.user import UserCreate, UserResponse
+from backend.schemas.user import UserInDB, UserOutDB
 from backend.config.database import get_db
 from sqlalchemy.orm import Session
 import uuid
@@ -15,8 +16,8 @@ def health_check():
     return {"status": "ok"}
 
 
-@user_router.post("/create", response_model=UserResponse, tags=["Users"])
-async def create_user(user: UserCreate, db: Session = Depends(get_db)):
+@user_router.post("/create", response_model=UserOutDB, tags=["Users"])
+async def create_user(user: UserInDB, db: Session = Depends(get_db)):
     """
     Create a new user instance in the database and return the response object.
     """
@@ -28,21 +29,22 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @user_router.delete("/delete/{id}", tags=["Users"])
-async def delete_user(id: uuid, db: Session = Depends(get_db)):
+async def delete_user(id: uuid.UUID, db: Session = Depends(get_db)):
     """
     Delete an existing user instance from the database.
     """
     repository = UserRepository(db)
     try:
         repository.delete(id)
+        return Response(status_code=200)
     except UserNotFoundException as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@user_router.get("/get/{id}", response_model=UserResponse, tags=["Users"])
-async def get_user(id: uuid, db: Session = Depends(get_db)):
+@user_router.get("/get/{id}", response_model=UserOutDB, tags=["Users"])
+async def get_user(id: uuid.UUID, db: Session = Depends(get_db)):
     """
     Fetch an existing user instance from the database by its unique id.
     """
@@ -55,7 +57,7 @@ async def get_user(id: uuid, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@user_router.get("/", response_model=list[UserResponse], tags=["Users"])
+@user_router.get("/", response_model=list[UserOutDB], tags=["Users"])
 async def get_all_users(db: Session = Depends(get_db)):
     """
     Fetch all existing user instances from the database.
@@ -70,8 +72,8 @@ async def get_all_users(db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@user_router.patch("/{id}", response_model=UserResponse, tags=["Users"])
-async def update_user(id: uuid, user: UserCreate, db: Session = Depends(get_db)):
+@user_router.patch("/{id}", response_model=UserOutDB, tags=["Users"])
+async def update_user(id: uuid.UUID, user: UserInDB, db: Session = Depends(get_db)):
     """
     Update an existing user instance in the database.
     """
