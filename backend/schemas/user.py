@@ -2,6 +2,7 @@ from typing import Optional, Annotated
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
+import uuid
 
 
 class Birthdate(BaseModel):
@@ -32,7 +33,20 @@ class UserInDB(BaseModel):
         extra_fields = "forbid"
 
 
+class UpdateUserInDB(BaseModel):
+    username: str | None = None
+    email: EmailStr | None = None
+    password: str | None = None
+    additional_information: Optional[UserInformation] = Field(
+        default_factory=UserInformation
+    )
+
+    class Config:
+        extra_fields = "forbid"
+
+
 class UserOutDB(BaseModel):
+    id: uuid.UUID
     username: str
     email: EmailStr
     birthdate: str | None = None

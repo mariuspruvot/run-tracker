@@ -3,7 +3,7 @@ from pydantic_core.core_schema import json_schema
 
 from backend.exceptions.users import UserNotFoundException
 from backend.repositories.user_repository import UserRepository
-from backend.schemas.user import UserInDB, UserOutDB
+from backend.schemas.user import UserInDB, UserOutDB, UpdateUserInDB
 from backend.config.database import get_db
 from sqlalchemy.orm import Session
 import uuid
@@ -73,7 +73,9 @@ async def get_all_users(db: Session = Depends(get_db)):
 
 
 @user_router.patch("/{id}", response_model=UserOutDB, tags=["Users"])
-async def update_user(id: uuid.UUID, user: UserInDB, db: Session = Depends(get_db)):
+async def update_user(
+    id: uuid.UUID, user: UpdateUserInDB, db: Session = Depends(get_db)
+):
     """
     Update an existing user instance in the database.
     """

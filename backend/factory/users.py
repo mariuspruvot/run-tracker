@@ -1,4 +1,4 @@
-from backend.schemas.user import UserInDB, Birthdate
+from backend.schemas.user import UserInDB, Birthdate, UpdateUserInDB
 from backend.models.user import User
 import bcrypt
 
@@ -23,6 +23,21 @@ class UserFactory:
             country=user.additional_information.country,
             zip_code=user.additional_information.zip_code,
         )
+
+    @classmethod
+    def update_user_in_db(cls, user: User, user_data: UpdateUserInDB) -> User:
+        """
+        Update an existing user instance in the database
+        """
+
+        field_to_update = user_data.model_dump(exclude_unset=True)
+
+        for field, value in field_to_update.items():
+            if field == "password":
+                value = bcrypt.hashpw(value.encode(), bcrypt.gensalt())
+            setattr(user, field, value)
+
+        return user
 
     @classmethod
     def _format_birthdate(cls, birthdate: Birthdate) -> str:
