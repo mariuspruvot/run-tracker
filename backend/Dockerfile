@@ -17,6 +17,13 @@ COPY pyproject.toml poetry.lock ./
 # Install the project dependencies
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
+# Install zsh
+RUN apt-get install -y zsh
+
+# Install Oh My Zsh
+RUN sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
+
+
 # Copy the rest of the application
 COPY . .
 

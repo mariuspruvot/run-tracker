@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from backend.settings.base import GLOBAL_SETTINGS
 
@@ -11,9 +10,6 @@ engine = create_engine(DATABASE_URL, echo=True)
 
 # session factory used to create new session objects that interact with the database.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# All models will inherit from this class.
-Base = declarative_base()
 
 
 def get_db():
